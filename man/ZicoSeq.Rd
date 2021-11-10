@@ -44,7 +44,7 @@ ZicoSeq(
 \arguments{
 \item{meta.dat}{a data frame containing the sample meta data.}
 
-\item{feature.dat}{a matrix of counts, row - features (OTUs, genes, etc) , column - samples.}
+\item{feature.dat}{a matrix of feature data, row - features (OTUs, genes, etc) , column - samples.}
 
 \item{grp.name}{the name for the variable of interest. It could be numeric or categorical; should be in \code{meta.dat}.}
 

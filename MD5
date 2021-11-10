@@ -1,10 +1,11 @@
-11ecbe54e1a51e9feef9fbfd96d52bc4 *DESCRIPTION
-fa57a673e24045ba83f7c0ded0be93f3 *NAMESPACE
+b292ccada2826bf2a35e56388bc21a24 *DESCRIPTION
+15f19901cf2eb348466d09a064c4b11d *NAMESPACE
 badb1f26ab8b2505a3bb0fe66b4a0fb9 *R/GMPR.R
 16d8cd75d6f286cd84c40b4893162ffa *R/GUniFrac.R
 f7fee19a58554983e84a263c40944d45 *R/RcppExports.R
 edd85750ef9ede337614dfd89f73fbe0 *R/SimMSeq.R
 89eb510a0bafd6ca234e557726b8440b *R/ZicoSeq.R
+c74c98533e789d1d604b92a8d6b0ffda *R/linda.R
 97dbbd25877e9b5bfc96c974cd6e268e *data/stool.otu.tab.rda
 b00f5a7e06fe90f2448ae1c28c00b905 *data/throat.meta.rda
 e3d83761e0910e6a0a818853d8f76a68 *data/throat.otu.tab.rda
@@ -16,9 +17,11 @@ b615f9a94fca8c8fc77cd260ab8b56bb *man/GUniFrac.Rd
 74fac72cf6d103da3d71df4dd15cb9dd *man/PermanovaG2.Rd
 2d5e3b5276f20b70df1e84428a5ee9b1 *man/Rarefy.Rd
 9fed3744ee0d6d7ad0d03a62abb2fcf2 *man/SimulateMSeq.Rd
-abfc1350f33d3605fb5096fe05d59d9a *man/ZicoSeq.Rd
+6ec752de31e9c92acbc3d26d06c7b9d9 *man/ZicoSeq.Rd
 8d1f5064ad2f80d6564fbb4152db64ba *man/adonis3.Rd
 d4bf2da8108efcc779a5c02aeefcc842 *man/dmanova.Rd
+a3e2320fa31f06dc1ac3984d4bb64aba *man/linda.Rd
+99b0a81b69ba2c9d5bb5f11fdbda1cc6 *man/linda.plot.Rd
 43f93278c6b01d7cfc6330065be187bc *man/stool.otu.tab.Rd
 49bf30fddf16c8dc1e688dfc2af4b638 *man/throat.meta.Rd
 fa24879cf8e473298fad71f8642fa7a2 *man/throat.otu.tab.Rd
