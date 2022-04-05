@@ -467,7 +467,7 @@ dmanova <- function (formula, data = NULL, positify = FALSE,
 	XZ <- rhs[, grps %in% u.grps[1:(nterms)], drop=F]
 	
 	n <- nrow(XZ)
-	if (class(lhs) == 'dist') {
+	if (inherits(lhs, 'dist')) {
 		D <- as.matrix(lhs)
 	} else {
 		D <- lhs

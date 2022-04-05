@@ -21,8 +21,7 @@ Generalized UniFrac distance contains an extra parameter \eqn{\alpha}{\alpha}
 controlling the weight on abundant lineages so the distance is not dominated 
 by highly abundant lineages. \eqn{\alpha=0.5}{\alpha=0.5} is overall very robust. 
 
-The unweighted and weighted UniFrac, and variance-adjusted weighted UniFrac 
-distances are also implemented.  
+The unweighted and weighted UniFrac, and variance-adjusted weighted UniFrac distances are also implemented.  
 }
 \usage{
 GUniFrac(otu.tab, tree, alpha = c(0, 0.5, 1))

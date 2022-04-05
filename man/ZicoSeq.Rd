@@ -29,7 +29,7 @@ ZicoSeq(
   winsor.end = c('top', 'bottom', 'both'),
   is.post.sample = TRUE,
   post.sample.no = 25,
-  link.func = list(function(x) x^0.5),
+  link.func = list(function(x) sign(x) * (abs(x))^0.5),
   stats.combine.func = max,
   perm.no = 99,
   strata = NULL,
@@ -104,11 +104,13 @@ Only relevant when multiple-stage normalization is used.}
 A list with the elements
 \item{call}{the call}
 \item{feature.dat}{the winsorized, filtered \code{feature.dat} matrix.}
-\item{filter.ind}{a vector of logical values indicating which features are tested.}
+\item{filter.features}{a vector of the names of the features that are filtered.}
+\item{ref.features}{a vector of the names of the reference features. Only relevant when reference approach is used.}
 \item{R2}{a matrix of percent explained variance (number of features by number of transformation functions).}
 \item{F0}{a matrix of F-statistics (number of features by number of transformation functions).}
 \item{RSS}{a matrix of residual sum squares (number of features by number of transformation functions).}
 \item{df.model, df.residual}{degrees of freedom for the model and residual space.}
+\item{coef.list}{a list of the linear regression coefficients under the specified transformations.}
 \item{p.raw}{the raw p-values based on permutations (not accurate if \code{perm.no} is small).}
 \item{p.adj.fdr}{permutation-based FDR-adjusted p-values.}
 \item{p.adj.fwer}{permutation-based FWER-adjusted (West-Young) p-values.}
@@ -122,8 +124,8 @@ Currently, it has the following components: 1. Winsorization to decrease the inf
 false discovery rate control / family-wise error rate control for multiple testing correction, which takes into account the correlation structure in the feature data.
 }
 \references{
-Yang, L. & Chen, J. 2021+. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
-To be submitted.
+Yang, L. & Chen, J. 2022. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
+Microbiome. In revision.
 }
 
 

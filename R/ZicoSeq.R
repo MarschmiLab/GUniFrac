@@ -10,7 +10,12 @@ perm.fdr.adj <- function (F0, Fp) {
 	m <- length(F0)
 	FPN <- (n + 1) - match(F0, Fp) - 1:m
 	p.adj.fdr <- FPN / perm.no / (1:m)
+	
+	# Impute 0s - pseudo-ct 0.5
+	p.adj.fdr[p.adj.fdr == 0] <- 0.5 / perm.no / which(p.adj.fdr == 0)
+	
 	p.adj.fdr <- pmin(1, rev(cummin(rev(p.adj.fdr))))[order(ord)]
+
 	return(p.adj.fdr)
 }
 
@@ -24,9 +29,11 @@ perm.fwer.adj <- function (F0, Fp) {
 				x <- F0[i]
 				y <- Fp[i, ]
 				col.max <<- ifelse(y > col.max, y, col.max)
-				mean(col.max >= x)
+				# Impute 0s
+				mean(c(1, col.max >= x))
 			})
 	p.adj.fwer <- rev(p.adj.fwer)
+	
 	p.adj.fwer <- pmin(1, rev(cummin(rev(p.adj.fwer))))[order(ord)]
 	return(p.adj.fwer)
 }
@@ -76,7 +83,7 @@ find.ref.z1 <- function(otu.tab, M,  ref.pct = 0.50, feature.dat.type) {
 bbmix.fit.MM <- function (ct, dep,  nIter = 10, winsor.qt = 1.0) {
 	
 	if (mean(ct == 0) >= 0.95 | sum(ct != 0) < 5) {
-		stop('The number of nonzero is too small to fit the model! Consider removing it from testing!\n')
+		stop('The number of nonzero is too small to fit the model! Consider removing it from testing or please do not enable posterior sampling!\n')
 	}
 	
 	# Initialization
@@ -166,7 +173,6 @@ bbmix.fit.MM <- function (ct, dep,  nIter = 10, winsor.qt = 1.0) {
 #' \item{p.adj.fdr}{permutation-based FDR-adjusted p-values}
 #' \item{p.adj.fwer}{permutation-based FWER-adjusted (West-Young) p-values}
 #' @import stats
-#' @import permute
 #' @import nlme
 #' @import matrixStats
 #' @import vegan
@@ -181,7 +187,7 @@ ZicoSeq <- function (
 		prev.filter = 0, mean.abund.filter = 0, max.abund.filter = 0, min.prop = 0,
 		is.winsor = TRUE, outlier.pct = 0.03, winsor.end = c('top', 'bottom', 'both'),
 		is.post.sample = TRUE,  post.sample.no = 25,
-		link.func = list(function (x) x^0.5), stats.combine.func = max,
+		link.func = list(function (x) sign(x) * (abs(x))^0.5), stats.combine.func = max,
 		perm.no = 99,  strata = NULL, 
 		ref.pct = 0.50, stage.no = 6, excl.pct = 0.20,
 		is.fwer = FALSE, verbose = TRUE, return.feature.dat = FALSE) {
@@ -189,6 +195,10 @@ ZicoSeq <- function (
 	this.call <- match.call()
 	feature.dat.type <- match.arg(feature.dat.type)
 	winsor.end <- match.arg(winsor.end)
+	
+	if(is.null(rownames(feature.dat)[1])) {
+		rownames(feature.dat) <- paste0("S", 1 : nrow(feature.dat))
+	}
 	
 	sds <- rowSds(feature.dat)
 	if (sum(sds == 0) != 0) {
@@ -242,9 +252,11 @@ ZicoSeq <- function (
 		filter.ind <- rowMeans(temp != 0) >= prev.filter & rowMeans(temp) >= mean.abund.filter & rowMaxs(temp) >= max.abund.filter
 		names(filter.ind) <- rownames(feature.dat)
 		if (verbose)  cat(sum(!filter.ind), ' features are filtered!\n')
+		filter.features <- rownames(feature.dat)[!filter.ind]
 		feature.dat <- feature.dat[filter.ind, ]
 	} else {
 		filter.ind <- rep(TRUE, ncol(feature.dat))
+		filter.features <- NULL
 	}
 	
 	if (feature.dat.type == 'proportion') {
@@ -319,7 +331,7 @@ ZicoSeq <- function (
 					err1 <- try(res <- bbmix.fit.MM(x, depth), silent = TRUE)
 					
 					# Handle error
-					if (class(err1) != 'try-error') {
+					if (inherits(err1, 'try-error')) {
 						prop1.1 <- rbeta(sample.no * post.sample.no, shape1 = x + res$shape1.1, shape2 = res$shape1.2 + depth - x)
 						prop1.2 <- rbeta(sample.no * post.sample.no, shape1 = x + res$shape2.1, shape2 = res$shape2.2 + depth - x)
 						prop <- ifelse(runif(sample.no * post.sample.no) <= res$q1, prop1.1, prop1.2)
@@ -421,6 +433,8 @@ ZicoSeq <- function (
 		if (verbose)  cat('Finding the references ...\n')
 		ref.ind <- find.ref.z1(feature.dat, M0, ref.pct = ref.pct, feature.dat.type = feature.dat.type)
 		size.factor <- colSums(feature.dat[ref.ind, ])
+	} else {
+		ref.ind <- NULL
 	}
 	###############################################################################
 	# Perform multiple stage normalization
@@ -547,6 +561,8 @@ ZicoSeq <- function (
 		}
 	}
 	
+	
+	
 	p.adj.fdr <- perm.fdr.adj(F0, Fp)
 	p.raw <- na.pad(p.raw, na.ind)
 	p.adj.fdr <- na.pad(p.adj.fdr, na.ind)
@@ -561,15 +577,166 @@ ZicoSeq <- function (
 		p.adj.fwer <- NULL
 	}
 	
+	# Finally, get the direction of change under specific transformations
+    if (length(ref.ind) != 0) {
+		temp.dat <- t(t(feature.dat) / colSums(feature.dat[ref.ind, ]))
+	} else {
+		temp.dat <- feature.dat
+	}
+	
+	coef.list <- NULL
+	for (j in 1 : func.no) {
+		func <- link.func[[j]]
+		coef.list[[j]] <- solve(t(M01) %*% M01) %*% t(M01) %*% t(func(temp.dat))
+
+	}
+
+    
 	if (!return.feature.dat) {
 		feature.dat <- NULL
 	}
-	
 	if (verbose) cat('Completed!\n')
 	
-	return(list(call = this.call, feature.dat = feature.dat, filter.ind = filter.ind,
-					R2 = R2.m, F0 = F0.m, RSS = RSS.m, df.model = df.model, df.residual = df.residual,
+	return(list(call = this.call, feature.dat = feature.dat, filter.features = filter.features, ref.features = row.names[ref.ind],
+					R2 = R2.m, F0 = F0.m, RSS = RSS.m, df.model = df.model, df.residual = df.residual, coef.list = coef.list,
 					p.raw = p.raw, p.adj.fdr = p.adj.fdr,  p.adj.fwer = p.adj.fwer))
 	
 }
+
+
+
+#' Plot ZicoSeq results
+#' The function plots the association strength and direction based on the output from \code{ZicoSeq}.
+#' @param ZicoSeq.obj return from function \code{ZicoSeq}.
+#' @param meta.dat the same meta.dat used in the \code {ZicoSeq}.
+#' @param pvalue.type character; It could be 'p.adj.fdr','p.raw' or 'p.adj.fwer'.
+#' @param cutoff a real value between 0 and 1; cutoff for pvalue.type.
+#' @param text.size text size for the plots.
+#' @param out.dir character; the directory to save the figures, e.g., \code{getwd()}. Default is NULL. If NULL, figures will not be saved.
+#' @param file.name character; the name of the file.
+#' @param width the width of the graphics region in inches. See R function \code{ggsave}.
+#' @param height the height of the graphics region in inches. See R function \code{ggsave}.
+#' @return A \code{ggplot2} object.
+#' @import ggplot2
+#' @import dplyr
+#' @import tibble
+#' @importFrom ggpubr ggarrange
+#' @rdname ZicoSeq.plot
+#' @export
+#' 
+
+
+ZicoSeq.plot <- function(ZicoSeq.obj, meta.dat, pvalue.type = c('p.adj.fdr','p.raw','p.adj.fwer'), 
+		cutoff = 0.1, text.size = 10, out.dir = NULL, file.name = 'ZicoSeq.plot.pdf',  width = 10, height = 6){
+	
+#  if(sum(ZicoSeq.obj[[pvalue.type]]<= cutoff) == 0){
+#    cat(paste0('No taxa within ', pvalue.type, ' <= ',cutoff, '!'))
+#  }
+	
+	grp.name <-  ZicoSeq.obj$call$grp.name
+	
+	# cat('Significant(',pvalue.type,'<=',cutoff,') association strength between taxa and ',grp.name, ' is visualized!\n' )
+	
+	if(ZicoSeq.obj$call$feature.dat.type == 'proportion'){
+		abundance <- ZicoSeq.obj$feature.dat
+		prevalence <- apply(ZicoSeq.obj$feature.dat, 1, function(x) mean(x > 0))
+	}
+	
+	if(ZicoSeq.obj$call$feature.dat.type == 'count'){
+		abundance <- t(t(ZicoSeq.obj$feature.dat)/colSums(ZicoSeq.obj$feature.dat))
+		prevalence <- apply(ZicoSeq.obj$feature.dat, 1, function(x) mean(x > 0))
+	}
+	
+	if(ZicoSeq.obj$call$feature.dat.type == 'other'){
+		abundance <- ZicoSeq.obj$feature.dat
+		prevalence <- apply(abundance, 1, function(x) sd(x))
+	}
+	
+	# relative abundance
+	abundance <- apply(abundance, 1, function(x) mean(x))
+	
+	if(!(length(unique(meta.dat[,grp.name])) > 2 & !is.numeric(meta.dat[,grp.name]))) {
+		coefs <- sapply(ZicoSeq.obj$coef.list, function(x) x[grep(grp.name,rownames(x)),])
+		colnames(coefs) <- paste0('coef_Func',1:length(ZicoSeq.obj$coef.list))
+	}  
+	
+	if (!is.numeric(meta.dat[,grp.name]) & length(unique(meta.dat[,grp.name])) == 2) {
+		level2 <- rownames(ZicoSeq.obj$coef.list[[1]])[grep(paste0('^',grp.name),rownames(ZicoSeq.obj$coef.list[[1]]))]
+		level2 <- gsub(grp.name, '', level2)
+		base <- setdiff(unique(meta.dat[,grp.name]), level2)
+	}
+	
+	# Break the ties
+	ZicoSeq.obj$R2 <- ZicoSeq.obj$R2 + runif(length(ZicoSeq.obj$R2), 0, 1e-10)
+	
+	R2 <- rowMaxs(ZicoSeq.obj$R2)
+
+	## pvalue = 0??? -log10(p)
+	if(length(unique(meta.dat[,grp.name])) > 2 & !is.numeric(meta.dat[,grp.name])){
+		plot.data <- data.frame(pvals = ZicoSeq.obj[[pvalue.type]], 
+				prevalence = prevalence, abundance = abundance, 
+				R2 = R2, 
+				taxa = rownames(ZicoSeq.obj$R2))
+		plot.data[plot.data$pvals > cutoff, 'taxa'] <- ''
+		
+		
+	}else{
+
+		signs <- t(sign(coefs))[t(ZicoSeq.obj$R2 == R2)]
+		signs[signs == 0] <- 1
+		
+		plot.data <- data.frame(pvals = ZicoSeq.obj[[pvalue.type]], 
+				prevalence = prevalence, abundance = abundance, 
+				R2 = R2 * signs, 
+				taxa = rownames(ZicoSeq.obj$R2))
+		
+		plot.data[plot.data$pvals > cutoff, 'taxa'] <- ''
+		
+		
+	}
+	
+	if(is.numeric(meta.dat[,grp.name])) {
+		title.name = paste0('Association between ', grp.name, ' and  taxa abundance')
+	}
+	
+	if(!is.numeric(meta.dat[,grp.name]) & length(unique(meta.dat[,grp.name])) > 2){
+		title.name = paste0('Association between ', grp.name, ' and  taxa abundance')
+	}
+	
+	if(!is.numeric(meta.dat[,grp.name]) & length(unique(meta.dat[,grp.name])) == 2){
+		title.name = paste0('Differential abundance between ', paste0(base, ' (reference) and ', level2))
+	}
+	
+	pvals <- R2 <- taxa <- NULL
+	plot.obj <-
+			ggplot(plot.data, aes(x = R2, y = -log10(pvals))) +
+			geom_point(aes(size = abundance, color = prevalence)) +
+			geom_vline(aes(xintercept = 0), color = 'gray', linetype = 'dashed') +
+			geom_hline(aes(yintercept = -log10(cutoff)), color = 'gray', linetype = 'dashed') +
+			scale_colour_gradient2(low = "white", high = "#006D2C") +
+			scale_y_continuous(limits = c(0, max(-log10(plot.data$pvals)) * 1.3)) +
+			ggrepel::geom_text_repel(aes(label = taxa), max.overlaps = Inf, color = 'black') +
+			labs(x = bquote(R^2), y = paste0('-log10(',pvalue.type,')'),
+					color = ifelse(ZicoSeq.obj$call$feature.dat.type == 'other','Standard deviation','Prevalence'),
+					size = ifelse(ZicoSeq.obj$call$feature.dat.type == 'other','Mean value','Mean abundance')) +
+			theme_bw() +
+			theme(axis.text = element_text(color = 'black', size = text.size),
+					axis.title = element_text(color = 'black', size = text.size),
+					legend.text = element_text(color = 'black', size = text.size),
+					legend.title = element_text(color = 'black', size = text.size)) +
+			ggtitle(title.name)
+	
+	
+	
+#	plots <- ggarrange(plotlist = plot.list, common.legend = T)
+	
+	if(!is.null(out.dir)) {
+		print(plot.obj)
+		ggsave(paste0(out.dir, file.name), width = width, height = height)
+	}
+	return(plot.obj)
+}
+
+
+
 
