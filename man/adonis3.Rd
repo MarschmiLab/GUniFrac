@@ -48,13 +48,12 @@ adonis3(formula, data, permutations = 999, method = "bray",
 
 \details{
 
-\code{adonis3} is the re-implementation of the famous \code{adonis} function in
-the \code{vegan} package based on the Freedman-Lane permutation scheme.
-(Freedman & Lane (1983), Hu & Satten (2020)).  \code{adonis} is the function 
-for the analysis and partitioning sums of squares using dissimilarities. The original
+\code{adonis3} is the re-implementation of the \code{adonis} function in
+the \code{vegan} package based on the Freedman-Lane permutation scheme
+(Freedman & Lane (1983), Hu & Satten (2020)).  The original
 implementation in the \code{vegan} package is directly based on the algorithm of Anderson (2001) and
-performs a sequential test of terms. Statistical significance is calculated
-based on permuting the distance matrix.  As shown in Chen & Zhang (2020+), such permutation
+performs a sequential test of terms. Statistical significance is assessed
+based on permuting the distance matrix. We found that such permutation
 will lead to power loss in testing the effect of a covariate of interest while adjusting
 for other covariates (confounders). The power loss is more evident  when the confounders' effects
 are strong, the correlation between the covariate of interest and the confounders is high, and
@@ -103,7 +102,7 @@ Freedman D. & Lane D. 1983. A nonstochastic interpretation of reported significa
 levels. \emph{Journal of Business and Economic Statistics}, \strong{1}292--298.
 
 Hu, Y. J. & Satten, G. A. 2020. Testing hypotheses about the microbiome using the 
-linear decomposition model (LDM). Bioinformatics.
+linear decomposition model (LDM). \emph{JBioinformatics}, \strong{ 36(14)} : 4106-4115.
 
 
 }

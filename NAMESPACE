@@ -26,6 +26,9 @@ export(adonis3)
 export(ZicoSeq)
 export(GMPR)
 export(ZicoSeq.plot)
+export(dICC)
+export(dICC.SE.asympt)
+export(dICC.SE.bt)
 
 useDynLib(GUniFrac)
 

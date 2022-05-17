@@ -1,10 +1,11 @@
-6e47a9d373e54e788235c56acb5d97dc *DESCRIPTION
-640ba9303cf4b24382d21ff257ea7b72 *NAMESPACE
+a1588bacfd00ba55d0f604e2bbd34a49 *DESCRIPTION
+25942219e2d132d3cd968c2a7d753c8a *NAMESPACE
 badb1f26ab8b2505a3bb0fe66b4a0fb9 *R/GMPR.R
 8760a397beb42898ae48ed4aaa5f9e6a *R/GUniFrac.R
 f7fee19a58554983e84a263c40944d45 *R/RcppExports.R
 edd85750ef9ede337614dfd89f73fbe0 *R/SimMSeq.R
 d9e278dc4f7383242b269d94d8dc8c17 *R/ZicoSeq.R
+2f205bc6700eabfdfd70e212e6dca978 *R/dICC.R
 0402dd2ea017e7f29046ce2cf9aafbc3 *build/vignette.rds
 97dbbd25877e9b5bfc96c974cd6e268e *data/stool.otu.tab.rda
 b00f5a7e06fe90f2448ae1c28c00b905 *data/throat.meta.rda
@@ -13,7 +14,7 @@ c346a08b57cdeeeed64cc7340f2c9c03 *data/throat.tree.rda
 13f22bd629dc73602f6a2daae9ccbc53 *data/vaginal.otu.tab.rda
 2ce24d3146e8a4acde50a27208c48643 *inst/doc/ZicoSeq.R
 64d41ccc5a4ba00727d8f9f4bacd0e89 *inst/doc/ZicoSeq.Rmd
-32d72ec2b646d1b40c1ea57126145ab2 *inst/doc/ZicoSeq.html
+f65e4ccf1103d524e54a9e80c0c43fd8 *inst/doc/ZicoSeq.html
 e8afc959e9f1184479124bde00767240 *man/GMPR.Rd
 5433a35f80ddff65b9844fcb6fe13c12 *man/GUniFrac.Rd
 245e1ccc58b416f88ae01d28d83f5753 *man/PermanovaG.Rd
@@ -22,7 +23,10 @@ e8afc959e9f1184479124bde00767240 *man/GMPR.Rd
 9fed3744ee0d6d7ad0d03a62abb2fcf2 *man/SimulateMSeq.Rd
 1e65ee063159e06deaeb52d2a587ab3b *man/ZicoSeq.Rd
 f82997e180bb755531bc1ae0862ca7f6 *man/ZicoSeq.plot.Rd
-8d1f5064ad2f80d6564fbb4152db64ba *man/adonis3.Rd
+352dee241dd2e4f3556212e682e623fc *man/adonis3.Rd
+f985adf4034ae0a0b610ae0a01a6ccd3 *man/dICC.Rd
+1f80ed27302295d7afab19d67bb2c080 *man/dICC.SE.asympt.Rd
+bf33a9f7246d8d8f137ebefccdbec423 *man/dICC.SE.bt.Rd
 d4bf2da8108efcc779a5c02aeefcc842 *man/dmanova.Rd
 43f93278c6b01d7cfc6330065be187bc *man/stool.otu.tab.Rd
 49bf30fddf16c8dc1e688dfc2af4b638 *man/throat.meta.Rd
