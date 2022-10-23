@@ -44,7 +44,7 @@ gtable of aligned plots from \code{ggarrange}.
 
 \references{
 Yang, L. & Chen, J. 2022. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
-Microbiome. In revision.
+Microbiome. In Press.
 }
 
 

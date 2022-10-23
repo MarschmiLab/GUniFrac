@@ -203,9 +203,10 @@ ZicoSeq <- function (
 	sds <- rowSds(feature.dat)
 	if (sum(sds == 0) != 0) {
 		stop(paste('Feature ',  paste(which(sds == 0), collapse = ','), 
-						'have identical values! Please remove them!\n'))
+						'have identical values (e.g. all 0s)! Please remove them!\n'))
 	}
 	
+
 	if (perm.no < 99) {
 		warning('To obtain stable results, number of permutations should be at least 99!\n')
 	}
@@ -273,7 +274,7 @@ ZicoSeq <- function (
 
 	if (feature.dat.type %in% c('count', 'proportion') & sum(rowSums(feature.dat != 0) <= 2) != 0) {
 		warning('Some features have less than 3 nonzero values! 
-               They have virtually no statistical power. You may consider filtering them in the analysis!\n')
+               They have virtually no statistical power. Please consider removing them in the analysis!\n')
 	}
 	
 	###############################################################################
@@ -281,7 +282,12 @@ ZicoSeq <- function (
 	
 	if (is.winsor == TRUE) {
 		depth <- colSums(feature.dat)
+		
+		cat("On average, ", round(length(depth) * outlier.pct), 
+		                          " outlier counts will be replaced for each feature!\n") 
+
 		feature.dat <- apply(feature.dat, 1, function (x) {
+
 					if (feature.dat.type == 'count') {
 						x <- x / depth
 					}
@@ -312,7 +318,8 @@ ZicoSeq <- function (
 		feature.dat <- t(feature.dat)
 		sds <- rowSds(feature.dat)
 		if (sum(sds == 0) != 0) {
-			warning(paste('After winsorization, feature ',  paste(which(sds == 0), collapse = ','),  'have identical values!\n'))
+			stop(paste('After winsorization, feature ',  paste(which(sds == 0), 
+			             collapse = ','),  'have identical values! Did you set the "outlier.pct" too high?\n'))
 		}
 		
 	}
@@ -331,7 +338,7 @@ ZicoSeq <- function (
 					err1 <- try(res <- bbmix.fit.MM(x, depth), silent = TRUE)
 					
 					# Handle error
-					if (inherits(err1, 'try-error')) {
+					if (!inherits(err1, 'try-error')) {
 						prop1.1 <- rbeta(sample.no * post.sample.no, shape1 = x + res$shape1.1, shape2 = res$shape1.2 + depth - x)
 						prop1.2 <- rbeta(sample.no * post.sample.no, shape1 = x + res$shape2.1, shape2 = res$shape2.2 + depth - x)
 						prop <- ifelse(runif(sample.no * post.sample.no) <= res$q1, prop1.1, prop1.2)
@@ -395,10 +402,18 @@ ZicoSeq <- function (
 		M0 <- model.matrix(~ 1, meta.dat)
 	} else {
 		data0 <- meta.dat[, c(adj.name), drop = FALSE]
+		if (sum(is.na(data0)) != 0) {
+		  stop("Please remove or impute NAs in the variables to be adjusted!\n")
+		}
 		M0 <- model.matrix( ~ ., data0)
 	}
 	
 	data1 <- meta.dat[, c(grp.name), drop = FALSE]
+	
+	if(sum(is.na(data1)) != 0) {
+	  stop("Please remove or impute NAs in the variable of interest!\n")
+	}
+	
 	M1 <-  model.matrix( ~ ., data1)[, -1, drop = FALSE]  # No intercept
 	
 	M01 <- cbind(M0, M1)

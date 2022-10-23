@@ -92,7 +92,6 @@ EstPara <- function (ref.otu.tab) {
 #' @import stats
 #' @export
 
-## Little different from the general simulation function in cluster, since we want to make the nOTU and nSam is the same as the nrow/ncol of the input ref.otu.tab
 SimulateMSeq <- function (
 		ref.otu.tab, nSam = 100, nOTU = 500,
 		diff.otu.pct = 0.1, diff.otu.direct = c("balanced", "unbalanced"), diff.otu.mode = c("abundant", "rare", "mix"),
@@ -224,3 +223,191 @@ SimulateMSeq <- function (
 	
 	return(list(otu.tab.sim = otu.tab.sim, covariate = X, confounder = Z, diff.otu.ind = diff.otu.ind, otu.names = idx.otu, conf.otu.ind = conf.otu.ind))
 }
+
+
+#' @title Simulate correlated microbiome data for differential abundance analysis
+#' @param ref.otu.tab a matrix, the reference OTU count table (row - OTUs, column - samples), serving as the template for synthetic sample generation.
+#' @param nSubject the number of subjects to be simulated.
+#' @param nOTU the number of OTUs to be simulated.
+#' @param nTime the number of time points to be simulated.
+#' @param error.sd variance of the random error controls the within-subject correlation for taxa, default is 1.
+#' @param MgX mean of the group effect across taxa.
+#' @param SgX variance of the group effect across taxa.
+#' @param X.diff.otu.pct a numeric value between 0 and 1, the percentage of differential OTUs for group effect to be simulated. If 0, global null setting is simulated. The default is 0.1.
+#' @param grp.ratio a numeric value between 0 and 1. Group size ratio. The default is 1, means equal group size.
+#' @param balanced.X a logical value "TRUE" or "FALSE" indicates the direction of change for these differential OTUs for group effect. "TRUE" means the direction of change for these differential OTUs is random. "FALSE" the direction of change is the same. The default is "TRUE".
+#' @param MgT mean of the time effect across taxa. Default is 0.
+#' @param SgT variance of the time effect across taxa. Default is 0.
+#' @param SbT variance of the subject-specific time effect reflecting the between-subject variability. Default is 0.
+#' @param T.diff.otu.pct a numeric value between 0 and 1, the percentage of differential OTUs for time effect to be simulated. If 0, global null setting is simulated. The default is 0.
+#' @param balanced.T a logical value "TRUE" or "FALSE" indicates the direction of change for these differential OTUs for time effect. "TRUE" means the direction of change for these differential OTUs is random. "FALSE" the direction of change is the same. The default is "TRUE".
+#' @param MgXT mean of the time effect across taxa. Default is 0.
+#' @param SgXT variance of the time effect across taxa. Default is 0.
+#' @param XT.diff.otu.pct a numeric value between 0 and 1, the percentage of differential OTUs for X:T interaction effect to be simulated. If 0, global null setting is simulated. The default is 0.
+#' @param balanced.XT a logical value "TRUE" or "FALSE" indicates the direction of change for these differential OTUs for X:time interaction effect. "TRUE" means the direction of change for these differential OTUs is random. "FALSE" the direction of change is the same. The default is "TRUE".
+#' @param MgZ mean of the confounder effect across taxa. Default is 0.5.
+#' @param SgZ variance of confounder effect across taxa. Default is 0.
+#' @param Z.diff.otu.pct a numeric value between 0 and 1, the percentage of differential OTUs for confounder effect to be sampled from group effect. If 0, global null setting is simulated. The default is 0.05.
+#' @param Z.nondiff.otu.pct a numeric value between 0 and 1, the percentage of differential OTUs for confounder effect to be sampled without group effect. If 0, global null setting is simulated. The default is 0.1.
+#' @param conf.cov.cor a numeric value between 0 and 1. The correlation between the covariate of interest and the confounder. The default is 0.6.
+#' @param depth.mu the mean sequencing depth to be simulated. The default is 10,000.
+#' @param depth.theta the theta value of the negative binomial distribution controlling the variance (mu + mu^2/theta). The default is 5.
+#' @param depth.conf.factor a numeric value controlling the dependence of the sequencing depth on the covariate of interest (depth.mu * exp(scale(X) * depth.conf.factor)). The default is 0, i.e., the depth is not associated with the covariate of interest. This parameter can be used to simulate depth confounding.
+#' @return Return a list with the elements:
+#' \item{otu.tab.sim}{simulated OTU table}
+#' \item{meta}{simulated meta data, including columns: covariate of interest(X), confounder(Z), time variable(time) and SubjectID}
+#' \item{otu.names}{the names of the simulated OTUs}
+#' \item{X.diff.otu.ind}{indices of the differential OTUs affected by the covariate of interest}
+#' \item{T.diff.otu.ind}{indices of the differential OTUs affected by the time}
+#' \item{XT.diff.otu.ind}{indices of the differential OTUs affected by the interaction between the covariate of interest and time}
+#' \item{Z.diff.otu.ind}{indices of the differential OTUs affected by the confounder}
+#' @rdname SimulateMSeqC
+#' @import dirmult
+#' @import MASS
+#' @import stats
+#' @export
+
+
+
+SimulateMSeqC <- function (
+		# Input data
+		ref.otu.tab, # otu * sample
+		nSubject = 40, nOTU = 50, nTime = 2,
+		# Random error
+		error.sd = 1, 
+		# Group effect
+		MgX = 0.5, SgX = 0, X.diff.otu.pct = 0.1, grp.ratio = 1, balanced.X = TRUE,
+		# Time effect
+		MgT = 0, SgT = 0, SbT = 0, T.diff.otu.pct =0, balanced.T = TRUE,
+		# Interaction effect
+		MgXT = 0, SgXT = 0, XT.diff.otu.pct = 0, balanced.XT = TRUE,
+		# Confounding effect
+		conf.cov.cor = 0.6, confounder = c('X', 'T'),
+		MgZ = 0.5, SgZ = 0,  Z.diff.otu.pct = 0.05, Z.nondiff.otu.pct = 0.1, 
+		# Sequence depth
+		depth.mu = 10000, depth.theta = 5,  depth.conf.factor = 0
+){
+	confounder <- match.arg(confounder)
+	if (confounder  == 'X') {
+		if (Z.diff.otu.pct > X.diff.otu.pct)  stop("Z.diff.otu.pct should not be larger than X.diff.otu.pct!\n")
+	}
+	if (confounder  == 'T') {
+		if (Z.diff.otu.pct > T.diff.otu.pct)  stop("Z.diff.otu.pct should not be larger than T.diff.otu.pct!\n")
+	}
+	
+	## Estimate parameters
+	model.paras <- EstPara(ref.otu.tab)
+	## select top nOTU
+	sample.names <- colnames(model.paras$ref.otu.tab)
+	idx.sample <- sample(sample.names, nSubject, replace = T)
+	OTU <- model.paras$ref.otu.tab[,idx.sample, drop=F]
+	otu.names <- names(sort(rowMeans(OTU),decreasing=T))[1:nOTU]
+	otu_tab <- OTU[otu.names,, drop=F]
+	
+	error.mean <- 0
+	## Replicate template sample in each Subject, generate baseline otu table
+	otu.tab <- otu_tab[, rep(1:nSubject, each=nTime)]
+	colnames(otu.tab) <- paste0(paste0('rep',1:nTime), '_',rep(paste0('Subject',1:nSubject), each = nTime))
+	
+	## Generate meta data
+	nSam <- ncol(otu.tab)
+	SubjectID <- as.numeric(gsub('.*Subject','',colnames(otu.tab)))
+	time <- as.numeric(as.factor(gsub('_.*','',colnames(otu.tab))))-1
+	
+	X <- as.vector(ifelse(SubjectID <= quantile(unique(SubjectID), grp.ratio / (1 + grp.ratio)), 0, 1))
+
+	rho <- sqrt(conf.cov.cor ^ 2 / (1 - conf.cov.cor ^ 2))
+	
+	if (confounder == 'X') {
+		Z <- as.vector(rho * scale(X) + rnorm(nSam))
+	} else {
+		Z <- as.vector(rho * scale(time) + rnorm(nSam))
+	}
+	
+	meta <- cbind.data.frame(X, Z, SubjectID, time)
+	rownames(meta) <- colnames(otu.tab)
+	
+	## Generate random error
+	error <- replicate(nSam,rnorm(nOTU, error.mean, error.sd))
+	
+	## Generate diff.otu.ind
+	otu.ord <- 1:nOTU
+	X.diff.otu.ind <- T.diff.otu.ind <- XT.diff.otu.ind <-NULL
+	
+	X.diff.otu.num <- round(X.diff.otu.pct * nOTU)
+	X.diff.otu.ind <- c(X.diff.otu.ind, sample(otu.ord, X.diff.otu.num))
+	
+	T.diff.otu.num <- round(T.diff.otu.pct * nOTU)
+	T.diff.otu.ind <- c(T.diff.otu.ind, sample(otu.ord, T.diff.otu.num))
+	
+	Z.diff.otu.num <- round(Z.diff.otu.pct * nOTU)
+	Z.nondiff.otu.num <- round(Z.nondiff.otu.pct * nOTU)
+	
+	if(confounder == 'T'){
+		Z.diff.otu.ind <- c(sample(T.diff.otu.ind, Z.diff.otu.num), sample(setdiff(otu.ord, T.diff.otu.ind), Z.nondiff.otu.num))
+	}else{
+		Z.diff.otu.ind <- c(sample(X.diff.otu.ind, Z.diff.otu.num), sample(setdiff(otu.ord, X.diff.otu.ind), Z.nondiff.otu.num))
+	}
+	
+	## Generate coefficient for X
+	if(balanced.X){
+		coef.X <- sample(c(rnorm(floor(nOTU / 2), mean = -MgX, sd = SgX), rnorm(nOTU - floor(nOTU / 2), mean = MgX, sd = SgX)))
+	}else{
+		coef.X <- rnorm(nOTU, MgX, SgX)
+	}
+	
+	coef.X[setdiff(otu.ord, X.diff.otu.ind)] <- 0
+	eta.X <- coef.X  %*% t(scale(X))
+	
+	## Generate coefficient for time
+	if(balanced.T){
+		coef.T <- sample(c(rnorm(floor(nOTU / 2), mean = -MgT, sd = SgT), rnorm(nOTU - floor(nOTU / 2), mean = MgT, sd = SgT)))
+	}else{
+		coef.T <- rnorm(nOTU, MgT, SgT)
+	}
+	coef.T[setdiff(otu.ord, T.diff.otu.ind)] <- 0
+	coef.T.Subject <- replicate(nSubject, rnorm(nOTU, coef.T, SbT))
+	coef.T <- matrix(data = apply(coef.T.Subject, 2, function(x) rep(x, nTime)), ncol = ncol(coef.T.Subject)*nTime)
+	eta.T <- t(t(coef.T) * as.vector(scale(time)))
+	
+	
+	## Generate coefficient for interaction
+	if(balanced.XT){
+		coef.XT <- sample(c(rnorm(floor(nOTU / 2), mean = -MgXT, sd = SgXT), rnorm(nOTU - floor(nOTU / 2), mean = MgXT, sd = SgXT)))
+	}else{
+		coef.XT  <- rnorm(nOTU, MgXT, SgXT)
+	}
+	coef.XT[setdiff(otu.ord, XT.diff.otu.ind)] <- 0
+	coef.XT.Subject <- replicate(nSubject, rnorm(nOTU, coef.XT, 0))
+	coef.XT <- matrix(data = apply(coef.XT.Subject, 2, function(x) rep(x, nTime)), ncol = ncol(coef.XT.Subject)*nTime)
+	eta.XT <-  t(t(coef.XT) * as.vector(scale(time) *scale(X)))
+	
+	## Generate coefficient for Z, assume balanced change
+	coef.Z <- sample(c(rnorm(floor(nOTU / 2), mean = -MgZ, sd = SgZ), rnorm(nOTU - floor(nOTU / 2), mean = MgZ, sd = SgZ)))
+	coef.Z[setdiff(otu.ord, Z.diff.otu.ind)] <- 0
+	eta.Z <- coef.Z %*% t(scale(Z))
+	
+	## combine index matrix, coefficient matrix and design matrix
+	eta.exp <- exp(t(eta.X + eta.Z + eta.T + eta.XT + error))
+	eta.exp <- eta.exp * t(otu.tab)
+	
+	# Renormalize
+	otu.tab.prop <- t(eta.exp / rowSums(eta.exp))
+	
+	# Generate the sequence depth
+	nSeq <- rnegbin(ncol(otu.tab.prop), mu = depth.mu * exp(scale(X) * depth.conf.factor), theta = depth.theta)
+	otu.tab.sim <- sapply(1:ncol(otu.tab.prop), function (i) rmultinom(1, nSeq[i], otu.tab.prop[,i]))
+	colnames(otu.tab.sim) <- rownames(eta.exp)
+	rownames(otu.tab.sim) <- colnames(eta.exp)
+	
+	otu.names <- colnames(eta.exp)
+	
+	X.diff.otu.ind = (1 : nOTU) %in% X.diff.otu.ind
+	T.diff.otu.ind = (1 : nOTU) %in% T.diff.otu.ind
+	XT.diff.otu.ind = (1 : nOTU) %in% XT.diff.otu.ind
+	Z.diff.otu.ind = (1 : nOTU) %in% Z.diff.otu.ind
+	
+	return(list(otu.tab.sim = otu.tab.sim, meta = meta, otu.names = otu.names,
+					X.diff.otu.ind = X.diff.otu.ind, T.diff.otu.ind = T.diff.otu.ind, XT.diff.otu.ind = XT.diff.otu.ind, Z.diff.otu.ind = Z.diff.otu.ind))
+}
+

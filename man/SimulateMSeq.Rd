@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim.R
 \name{SimulateMSeq}
 \alias{SimulateMSeq}
-\title{A Semiparametric Model-based Microbiome Sequencing Data Simulator}
+\title{A Semiparametric Model-based Microbiome Sequencing Data Simulator for Cross-sectional and Case-control Studies}
 \description{
 The function generates synthetic microbiome sequencing data for studying the performance of differential abundance analysis methods.  
 It uses a user-supplied (large) reference OTU table as a template to generate a synthetic OTU table of specified size. A subset of OTUs  are affected
@@ -92,15 +92,15 @@ Return a list with the elements:
 
 \details{
 
-This function implements a semiparametric approach for realistic microbiome sequencing data generation. The method draws random samples from a large reference dataset (non-parametric part) and uses
+This function implements a semiparametric approach for realistic independent microbiome sequencing data generation. The method draws random samples from a large reference dataset (non-parametric part) and uses
  these reference samples as templates to generate new samples (parametric part). Specifically, for each drawn reference sample, it infers the underlying composition based on a Bayesian model and 
  then adds covariate/confounder effects to the composition vector, based on which a new sequencing sample is generated. The method circumvents the difficulty in modeling the inter-subject variation
  of the microbiome composition.   
 
 }
 \references{
-Yang, L. & Chen, J. 2021+. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
-Submitted.
+Yang, L. & Chen, J. 2022. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
+Microbiome. In Press.
 }
 
 

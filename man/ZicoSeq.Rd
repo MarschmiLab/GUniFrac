@@ -66,7 +66,8 @@ will be used.}
 
 \item{is.winsor}{a logical value indicating whether winsorization should be performed to replace outliers. The default is TRUE.}
 
-\item{outlier.pct}{the expected percentage of outliers. These outliers will be winsorized. The default is 0.03.}
+\item{outlier.pct}{the expected percentage of outliers. These outliers will be winsorized. The default is 0.03. For count/proportion data, 
+\code{outlier.pct} should be less than \code{prev.filter}.}
 
 \item{winsor.end}{a character indicating whether the outliers at the "top", "bottom" or "both" will be winsorized.
 The default is "top". If the \code{feature.dat.type} is "other", "both" may be considered.}
@@ -125,7 +126,7 @@ false discovery rate control / family-wise error rate control for multiple testi
 }
 \references{
 Yang, L. & Chen, J. 2022. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
-Microbiome. In revision.
+Microbiome. In Press.
 }
 
 
