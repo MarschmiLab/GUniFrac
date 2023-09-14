@@ -68,6 +68,7 @@ Jun Chen <chen.jun2@mayo.edu>
 \code{\link{Rarefy}}, \code{\link{GUniFrac}}, \code{\link{adonis3}}
 }
 \examples{
+\dontrun{
 data(throat.otu.tab)
 data(throat.tree)
 data(throat.meta)
@@ -82,6 +83,7 @@ unifracs <- GUniFrac(otu.tab.rff, throat.tree, alpha=c(0, 0.5, 1))$unifracs
 
 #	Combine unweighted and weighted UniFrac for testing
 PermanovaG2(unifracs[, , c("d_1", "d_UW")] ~ groups)
+}
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
 % R documentation directory.

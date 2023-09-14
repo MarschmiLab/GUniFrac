@@ -71,7 +71,7 @@ Chen, J. & Zhang, X. 2021.  D-MANOVA: fast distance-based multivariate analysis 
 
 
 \examples{
-
+\dontrun{
 data(throat.otu.tab)
 data(throat.tree)
 data(throat.meta)
@@ -87,7 +87,7 @@ unifracs <- GUniFrac(otu.tab.rff, throat.tree, alpha=c(0, 0.5, 1))$unifracs
 # Test the smoking effect based on unweighted UniFrac distance, adjusting sex
 # 'Sex' should be put before 'SmokingStatus'
 dmanova(as.dist(unifracs[, , 'd_UW']) ~ Sex + SmokingStatus, data = throat.meta)
-
+}
 
 }
 

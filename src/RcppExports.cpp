@@ -5,9 +5,27 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
+// PairwiseD
+List PairwiseD(const NumericMatrix& cum, const NumericVector& b, const NumericVector& a);
+RcppExport SEXP _GUniFrac_PairwiseD(SEXP cumSEXP, SEXP bSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type cum(cumSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(PairwiseD(cum, b, a));
+    return rcpp_result_gen;
+END_RCPP
+}
 // gmpr
 NumericVector gmpr(IntegerMatrix x, int min_ct, int intersect_no);
-RcppExport SEXP _GMPR_gmpr(SEXP xSEXP, SEXP min_ctSEXP, SEXP intersect_noSEXP) {
+RcppExport SEXP _GUniFrac_gmpr(SEXP xSEXP, SEXP min_ctSEXP, SEXP intersect_noSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,11 +38,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_GMPR_gmpr", (DL_FUNC) &_GMPR_gmpr, 3},
+    {"_GUniFrac_PairwiseD", (DL_FUNC) &_GUniFrac_PairwiseD, 3},
+    {"_GUniFrac_gmpr", (DL_FUNC) &_GUniFrac_gmpr, 3},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_GMPR(DllInfo *dll) {
+RcppExport void R_init_GUniFrac(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

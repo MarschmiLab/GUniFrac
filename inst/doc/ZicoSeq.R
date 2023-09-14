@@ -29,10 +29,10 @@ ZicoSeq.obj <- ZicoSeq(meta.dat = meta.dat, feature.dat = comm,
                     # Reference-based multiple stage normalization
                     ref.pct = 0.5, stage.no = 6, excl.pct = 0.2,
                     # Family-wise error rate control
-                    is.fwer = TRUE, verbose = TRUE, return.feature.dat = T)
+                    is.fwer = TRUE, verbose = TRUE, return.feature.dat = TRUE)
 
 ## ---- fig.retina = 4, fig.width= 8, fig.height=8, results=FALSE, message=FALSE, warning=FALSE----
-ZicoSeq.plot(ZicoSeq.obj, meta.dat, pvalue.type = 'p.adj.fdr', cutoff = 0.1, text.size = 10,
+ZicoSeq.plot(ZicoSeq.obj, pvalue.type = 'p.adj.fdr', cutoff = 0.1, text.size = 10,
              out.dir = NULL, width = 10, height = 6)
 
 ## ---- results = FALSE---------------------------------------------------------
@@ -53,7 +53,7 @@ ZicoSeq.obj.p <- ZicoSeq(meta.dat = meta.dat, feature.dat = comm.p,
                     ref.pct = 0.5, stage.no = 6, excl.pct = 0.2,
                     # Family-wise error rate control
                     is.fwer = TRUE, verbose = TRUE, return.feature.dat = T)
-suppressWarnings(ZicoSeq.plot(ZicoSeq.obj = ZicoSeq.obj.p, meta.dat = meta.dat, pvalue.type = 'p.adj.fdr', 
+suppressWarnings(ZicoSeq.plot(ZicoSeq.obj = ZicoSeq.obj.p, pvalue.type = 'p.adj.fdr', 
              cutoff = 0.1, text.size = 10, out.dir = NULL, width = 10, height = 6))                    
 
 
@@ -76,7 +76,7 @@ ZicoSeq.obj.o <- ZicoSeq(meta.dat = meta.dat, feature.dat = comm.o,
 		ref.pct = 0.5, stage.no = 6, excl.pct = 0.2,
 		# Family-wise error rate control
 		is.fwer = TRUE, verbose = TRUE, return.feature.dat = T)
-    ZicoSeq.plot(ZicoSeq.obj = ZicoSeq.obj.o, meta.dat = meta.dat, pvalue.type = 'p.adj.fdr', 
+    ZicoSeq.plot(ZicoSeq.obj = ZicoSeq.obj.o,  pvalue.type = 'p.adj.fdr', 
              cutoff = 0.1, text.size = 10, out.dir = NULL, width = 10, height = 6)    
 
 ## -----------------------------------------------------------------------------

@@ -16,7 +16,6 @@ with the sign indicating the association direction determined based on  the sign
 \usage{
 ZicoSeq.plot(
   ZicoSeq.obj,
-  meta.dat, 
   pvalue.type = c('p.adj.fdr','p.raw','p.adj.fwer'), 
   cutoff = 0.1, 
   text.size = 10,
@@ -28,7 +27,6 @@ ZicoSeq.plot(
 \arguments{
 
 \item{ZicoSeq.obj}{object from calling the function \code{ZicoSeq}.}
-\item{meta.dat}{the same meta.dat used in the \code{ZicoSeq}.}
 \item{pvalue.type}{character string, one of 'p.adj.fdr','p.raw' and 'p.adj.fwer'.}
 \item{cutoff}{a cutoff between 0 and 1 for pvalue.type, below which the names of the features will be printed.}
 \item{text.size}{text size for the plots.}
@@ -42,9 +40,14 @@ ZicoSeq.plot(
 gtable of aligned plots from \code{ggarrange}.
 }
 
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{ZicoSeq}}
+}
+
 \references{
 Yang, L. & Chen, J. 2022. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
-Microbiome. In Press.
+Microbiome. Microbiome, 10(1), 1-23.
 }
 
 
@@ -75,18 +78,17 @@ zico.obj <- ZicoSeq(meta.dat = meta.dat, feature.dat = comm,
 		# Permutation-based multiple testing correction
 		perm.no = 99,  strata = NULL, 
 		# Reference-based multiple stage normalization
-		ref.pct = 0.5, stage.no = 6, excl.pct = 0.2,
+		ref.pct = 0.5, stage.no = 6, excl.pct = 0.2, 
 		# Family-wise error rate control
 		is.fwer = FALSE,
 		verbose = TRUE, return.feature.dat = TRUE)
 
 which(zico.obj$p.adj.fdr <= 0.1)
 
-ZicoSeq.plot(ZicoSeq.obj = zico.obj, meta.dat = meta.dat, pvalue.type = 'p.adj.fdr', 
+ZicoSeq.plot(ZicoSeq.obj = zico.obj, pvalue.type = 'p.adj.fdr', 
              cutoff = 0.1, text.size = 10, out.dir = NULL, width = 15, height = 10)    
 
 }
-
 
 \keyword{visualization}
 

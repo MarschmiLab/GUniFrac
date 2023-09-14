@@ -36,9 +36,10 @@ ZicoSeq(
   ref.pct = 0.5,
   stage.no = 6,
   excl.pct = 0.2,
+  p.max = 500,
   is.fwer = FALSE,
   verbose = TRUE,
-  return.feature.dat = FALSE
+  return.feature.dat = TRUE
 )
 }
 \arguments{
@@ -82,12 +83,13 @@ square-root transformation is a robust choice for many datasets.}
 
 \item{perm.no}{the number of permutations. If the raw p values are of the major interest, set \code{perm.no} to at least 999.}
 
-\item{strata}{a factor such as subject IDs indicating the permutation strata. Permutation will be confined to each stratum. This can be used for 
-paired or some longitudinal designs.}
+\item{strata}{a factor such as subject IDs indicating the permutation strata or characters indicating the strata variable in \code{meta.dat}. Permutation will be confined to each stratum. This can be used for paired or some longitudinal designs.}
 
 \item{stats.combine.func}{function to combine the F-statistic for the omnibus test. The default is \code{max}.}
 
 \item{ref.pct}{percentage of reference taxa. The default is 0.5.}
+
+\item{p.max}{the maximum number of (most abundant) taxa to be considered in reference taxa selection; only relevant when the nubmer of taxa is huge. The default is 500, i.e., when the nubmer of taxa is larger than 500, only the 500 most abundant taxa will be used for reference selection. This is to reduce the computational time.}
 
 \item{stage.no}{the number of stages if multiple-stage normalization is used. The default is 6.}
 
@@ -105,6 +107,8 @@ Only relevant when multiple-stage normalization is used.}
 A list with the elements
 \item{call}{the call}
 \item{feature.dat}{the winsorized, filtered \code{feature.dat} matrix.}
+\item{meta.dat}{\code{meta.dat} used.}
+\item{grp.name}{the name of the variable of interest.}
 \item{filter.features}{a vector of the names of the features that are filtered.}
 \item{ref.features}{a vector of the names of the reference features. Only relevant when reference approach is used.}
 \item{R2}{a matrix of percent explained variance (number of features by number of transformation functions).}
@@ -126,9 +130,13 @@ false discovery rate control / family-wise error rate control for multiple testi
 }
 \references{
 Yang, L. & Chen, J. 2022. A comprehensive evaluation of differential abundance analysis methods: current status and potential solutions.
-Microbiome. In Press.
+Microbiome, 10(1), 1-23.
 }
 
+\seealso{
+%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{ZicoSeq.plot}}
+}
 
 \author{Jun Chen}
 

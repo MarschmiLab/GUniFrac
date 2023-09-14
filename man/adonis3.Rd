@@ -112,6 +112,7 @@ linear decomposition model (LDM). \emph{JBioinformatics}, \strong{ 36(14)} : 410
 
 
 \examples{
+\dontrun{
 data(throat.otu.tab)
 data(throat.tree)
 data(throat.meta)
@@ -126,7 +127,7 @@ unifracs <- GUniFrac(otu.tab.rff, throat.tree, alpha=c(0, 0.5, 1))$unifracs
 
 # Test the smoking effect based on unweighted UniFrac distance, adjusting sex
 adonis3(as.dist(unifracs[, , 'd_UW']) ~ Sex + SmokingStatus, data = throat.meta)
-
+}
 
 }
 

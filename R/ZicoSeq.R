@@ -45,9 +45,20 @@ na.pad <- function (vec, ind) {
 	return(vec0)
 }
 
-find.ref.z1 <- function(otu.tab, M,  ref.pct = 0.50, feature.dat.type) {
+find.ref.z1 <- function(otu.tab, M,  ref.pct = 0.50, feature.dat.type, p.max = 500) {
+  
+  # p.max to reduce the computation time
 	p <- nrow(otu.tab)
 	n <- ncol(otu.tab)
+	
+	if (p > p.max) {
+	  ord <- order(rowSums(otu.tab), decreasing = TRUE)
+	  otu.tab <- otu.tab[ord[1 : p.max], ]
+	  p <- p.max
+	} else {
+	  ord <- 1 : p
+	}
+
 	if (feature.dat.type == 'count') {
 		otu.tab <- otu.tab + 1
 	}
@@ -77,7 +88,7 @@ find.ref.z1 <- function(otu.tab, M,  ref.pct = 0.50, feature.dat.type) {
 		res[i, (i + 1) : p] <- res[(i + 1) : p, i] <- sigma
 	}
 	ref.ind <- order(rowMedians(res, na.rm = TRUE))[1 : round(ref.pct * p)]
-	return(ref.ind)
+	return(ord[ref.ind])
 }
 
 bbmix.fit.MM <- function (ct, dep,  nIter = 10, winsor.qt = 1.0) {
@@ -158,12 +169,15 @@ bbmix.fit.MM <- function (ct, dep,  nIter = 10, winsor.qt = 1.0) {
 #' @param ref.pct percentage of reference taxa.
 #' @param stage.no the number of stages if multiple-stage normalization is used.
 #' @param excl.pct the maximum percentage of significant features in the reference set that can be removed. Only relevant when multiple-stage normalization is used.
+#' @param p.max the maximum number of most abundant features to be considered in reference selection; only relevant for large data sets 
 #' @param is.fwer a logical value indicating whether the family-wise error rate control (West-Young) will be performed.
 #' @param verbose a logical value indicating whether the trace information should be printed out.
 #' @param return.feature.dat a logical value indicating whether the wisorized, filtered "feature.dat" matrix should be returned.
 #' @return A list with the elements
 #' \item{call}{the call}
 #' \item{feature.dat}{the wisorized, filtered "feature.dat" matrix}
+#' \item{meta.dat}{"meta.dat" used}
+#' \item{grp.name}{"grp.name" used}
 #' \item{filter.ind}{a vector of logical values indicating which features are filtered}
 #' \item{R2}{a matrix of percent explained variance (number of features by number of transformation functions)}
 #' \item{F0}{a matrix of observed F-statistics (number of features by number of functions)}
@@ -189,12 +203,23 @@ ZicoSeq <- function (
 		is.post.sample = TRUE,  post.sample.no = 25,
 		link.func = list(function (x) sign(x) * (abs(x))^0.5), stats.combine.func = max,
 		perm.no = 99,  strata = NULL, 
-		ref.pct = 0.50, stage.no = 6, excl.pct = 0.20,
-		is.fwer = FALSE, verbose = TRUE, return.feature.dat = FALSE) {
+		ref.pct = 0.50, stage.no = 6, excl.pct = 0.20, p.max = 500,
+		is.fwer = FALSE, verbose = TRUE, return.feature.dat = TRUE) {
 	
 	this.call <- match.call()
 	feature.dat.type <- match.arg(feature.dat.type)
 	winsor.end <- match.arg(winsor.end)
+	
+	if (!is.null(strata)) {
+	  if (length(strata) == 1 & is.character(strata)) {
+	    strata <- factor(meta.dat[, strata])
+	  } else {
+	    strata <- factor(strata)
+	  }
+	  if (length(strata) != nrow(meta.dat)) {
+	    stop("'strata' parameter is not correct. Dimension does not match!\n")
+	  }
+	}
 	
 	if(is.null(rownames(feature.dat)[1])) {
 		rownames(feature.dat) <- paste0("S", 1 : nrow(feature.dat))
@@ -260,6 +285,23 @@ ZicoSeq <- function (
 		filter.features <- NULL
 	}
 	
+	# After filtering, some samples could have all zeros, will need to remove them.
+	if (feature.dat.type %in% c('count', 'proportion')) {
+
+	  ind <- colSums(feature.dat) != 0
+	  
+	  if (sum(!ind) != 0) {
+	    warning(sum(!ind), ' samples have all zeros after filtering! They will be removed! \n')
+	    feature.dat <- feature.dat[, ind, drop = FALSE]
+	    meta.dat <- meta.dat[ind, ]
+	    if (!is.null(strata)) {
+	      strata <- strata[ind]
+	    }
+	  }
+
+	}
+
+	  
 	if (feature.dat.type == 'proportion') {
 		# Renormalization
 		feature.dat <- t(t(feature.dat) / colSums(feature.dat))
@@ -319,7 +361,7 @@ ZicoSeq <- function (
 		sds <- rowSds(feature.dat)
 		if (sum(sds == 0) != 0) {
 			stop(paste('After winsorization, feature ',  paste(which(sds == 0), 
-			             collapse = ','),  'have identical values! Did you set the "outlier.pct" too high?\n'))
+			             collapse = ','),  'have identical values! Did you set the "outlier.pct" too high or some features are extremely sparse?\n'))
 		}
 		
 	}
@@ -394,9 +436,7 @@ ZicoSeq <- function (
 	#return(feature.dat.p.list)
 	###############################################################################
 	# Covariate space (including intercept)
-	if (!is.null(strata)) {
-		strata <- factor(strata)
-	}
+
 	
 	if (is.null(adj.name)) {
 		M0 <- model.matrix(~ 1, meta.dat)
@@ -446,7 +486,7 @@ ZicoSeq <- function (
 	###############################################################################
 	if (feature.dat.type %in% c('count', 'proportion')) {
 		if (verbose)  cat('Finding the references ...\n')
-		ref.ind <- find.ref.z1(feature.dat, M0, ref.pct = ref.pct, feature.dat.type = feature.dat.type)
+		ref.ind <- find.ref.z1(feature.dat, M0, ref.pct = ref.pct, feature.dat.type = feature.dat.type, p.max = p.max)
 		size.factor <- colSums(feature.dat[ref.ind, ])
 	} else {
 		ref.ind <- NULL
@@ -594,7 +634,9 @@ ZicoSeq <- function (
 	
 	# Finally, get the direction of change under specific transformations
     if (length(ref.ind) != 0) {
-		temp.dat <- t(t(feature.dat) / colSums(feature.dat[ref.ind, ]))
+    divisor <- colSums(feature.dat[ref.ind, ])
+    divisor[divisor == 0] <- 1
+		temp.dat <- t(t(feature.dat) / divisor)
 	} else {
 		temp.dat <- feature.dat
 	}
@@ -612,7 +654,8 @@ ZicoSeq <- function (
 	}
 	if (verbose) cat('Completed!\n')
 	
-	return(list(call = this.call, feature.dat = feature.dat, filter.features = filter.features, ref.features = row.names[ref.ind],
+	return(list(call = this.call, feature.dat = feature.dat, meta.dat = meta.dat, grp.name = grp.name,
+	            filter.features = filter.features, ref.features = row.names[ref.ind],
 					R2 = R2.m, F0 = F0.m, RSS = RSS.m, df.model = df.model, df.residual = df.residual, coef.list = coef.list,
 					p.raw = p.raw, p.adj.fdr = p.adj.fdr,  p.adj.fwer = p.adj.fwer))
 	
@@ -623,7 +666,6 @@ ZicoSeq <- function (
 #' Plot ZicoSeq results
 #' The function plots the association strength and direction based on the output from \code{ZicoSeq}.
 #' @param ZicoSeq.obj return from function \code{ZicoSeq}.
-#' @param meta.dat the same meta.dat used in the \code {ZicoSeq}.
 #' @param pvalue.type character; It could be 'p.adj.fdr','p.raw' or 'p.adj.fwer'.
 #' @param cutoff a real value between 0 and 1; cutoff for pvalue.type.
 #' @param text.size text size for the plots.
@@ -641,14 +683,15 @@ ZicoSeq <- function (
 #' 
 
 
-ZicoSeq.plot <- function(ZicoSeq.obj, meta.dat, pvalue.type = c('p.adj.fdr','p.raw','p.adj.fwer'), 
+ZicoSeq.plot <- function(ZicoSeq.obj, pvalue.type = c('p.adj.fdr','p.raw','p.adj.fwer'), 
 		cutoff = 0.1, text.size = 10, out.dir = NULL, file.name = 'ZicoSeq.plot.pdf',  width = 10, height = 6){
 	
 #  if(sum(ZicoSeq.obj[[pvalue.type]]<= cutoff) == 0){
 #    cat(paste0('No taxa within ', pvalue.type, ' <= ',cutoff, '!'))
 #  }
 	
-	grp.name <-  ZicoSeq.obj$call$grp.name
+	grp.name <-  ZicoSeq.obj$grp.name
+	meta.dat <- ZicoSeq.obj$meta.dat
 	
 	# cat('Significant(',pvalue.type,'<=',cutoff,') association strength between taxa and ',grp.name, ' is visualized!\n' )
 	

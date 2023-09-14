@@ -19,26 +19,38 @@ proportion for community A and B.
 
 Generalized UniFrac distance contains an extra parameter \eqn{\alpha}{\alpha} 
 controlling the weight on abundant lineages so the distance is not dominated 
-by highly abundant lineages. \eqn{\alpha=0.5}{\alpha=0.5} is overall very robust. 
+by highly abundant lineages. \eqn{\alpha=0.5}{\alpha=0.5} ("d_0.5") is overall very robust. 
 
-The unweighted and weighted UniFrac, and variance-adjusted weighted UniFrac distances are also implemented.  
+The unweighted ("d_1") and weighted UniFrac ("d_UW") are also implemented.  
 }
+
 \usage{
-GUniFrac(otu.tab, tree, alpha = c(0, 0.5, 1))
+GUniFrac(otu.tab, tree, size.factor = NULL, alpha = c(0, 0.5, 1), verbose = TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{otu.tab}{
 %%     ~~Describe \code{otu.tab} here~~
-an OTU count table, row - n sample, column - q OTU
+a matrix, the OTU count table, row - n sample, column - q OTU
 }
   \item{tree}{
 %%     ~~Describe \code{tree} here~~
 a rooted phylogenetic tree of R class \dQuote{phylo}
 }
+
+  \item{size.factor}{
+   a numeric vector of the normalizing factors to divide the counts. The length
+   is the number of samples. This provides the flexibility to normalize data using the 
+   preferred normalization method (e.g. GMPR normalizing factor). If not supplied, the total sum will be used. 
+}
   \item{alpha}{
 %%     ~~Describe \code{alpha} here~~
-the parameter controlling weight on abundant lineages
+a numeric vector, parameters controlling the weight on abundant lineages
+}
+
+  \item{verbose}{
+%%     ~~Describe \code{alpha} here~~
+logical value, whether to print out the messages
 }
 }
 
@@ -75,7 +87,7 @@ The function only accepts rooted tree. To root a tree, you may consider using \c
 \code{\link{Rarefy}}, \code{\link{PermanovaG}}
 }
 \examples{
-
+\dontrun{
 data(throat.otu.tab)
 data(throat.tree)
 data(throat.meta)
@@ -90,13 +102,12 @@ unifracs <- GUniFrac(otu.tab.rff, throat.tree, alpha=c(0, 0.5, 1))$unifracs
 
 dw <- unifracs[, , "d_1"]		# Weighted UniFrac
 du <- unifracs[, , "d_UW"]		# Unweighted UniFrac	
-dv <- unifracs[, , "d_VAW"]		# Variance adjusted weighted UniFrac
 d0 <- unifracs[, , "d_0"]     	# GUniFrac with alpha 0  
 d5 <- unifracs[, , "d_0.5"]   	# GUniFrac with alpha 0.5 
 
 # Permanova - Distance based multivariate analysis of variance
 adonis3(as.dist(d5) ~ groups)
-
+}
 
 }
 % Add one or more standard keywords, see file 'KEYWORDS' in the
