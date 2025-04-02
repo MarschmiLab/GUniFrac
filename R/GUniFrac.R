@@ -1,5 +1,5 @@
 
-GUniFrac <- function (otu.tab, tree, size.factor = NULL, alpha = c(0, 0.5, 1), verbose = TRUE) {
+GUniFrac <- function (otu.tab, tree, size.factor = NULL, alpha = c(0, 0.5, 1), verbose = TRUE, normalize_counts = TRUE) {
   # Calculate Generalized UniFrac distances. Unweighted and 
   # Variance-adjusted UniFrac distances will also be returned.
   #	
@@ -19,16 +19,19 @@ GUniFrac <- function (otu.tab, tree, size.factor = NULL, alpha = c(0, 0.5, 1), v
   
   # Convert into normalized data
   otu.tab <- as.matrix(otu.tab)
-  if (is.null(size.factor)) {
-    row.sum <- rowSums(otu.tab)
-  } else {
-    if (length(size.factor) != nrow(otu.tab)) {
-      stop('The length of size factor is not consistent with the OTU table!\n')
-    }	
-    row.sum <- size.factor
-  }
-  row.sum <- rowSums(otu.tab)
-  otu.tab <- otu.tab / row.sum
+  
+  if (normalize_counts) {
+      if (is.null(size.factor)) {
+        row.sum <- rowSums(otu.tab)
+      } else {
+        if (length(size.factor) != nrow(otu.tab)) {
+          stop('The length of size factor is not consistent with the OTU table!\n')
+        }	
+        row.sum <- size.factor
+      }
+      otu.tab <- otu.tab / row.sum
+      }
+  
   n <- nrow(otu.tab)
   
   # Construct the returning array
