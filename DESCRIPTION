@@ -3,7 +3,7 @@ Type: Package
 Title: Generalized UniFrac Distances, Distance-Based Multivariate
         Methods and Feature-Based Univariate Methods for Microbiome
         Data Analysis
-Version: 1.8
+Version: 1.8.1
 Date: 2023-09-13
 Author: Jun Chen, Xianyang Zhang, Lu Yang, Lujun Zhang
 Maintainer: Jun Chen <chen.jun2@mayo.edu>
